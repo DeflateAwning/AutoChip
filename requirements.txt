@@ -11,3 +11,6 @@ torch>=*
 anthropic>=*
 huggingface-hub>=*
 google-generativeai>=*
+
+# numpy==1.26.4
+numpy>=*

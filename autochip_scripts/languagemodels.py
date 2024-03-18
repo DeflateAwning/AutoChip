@@ -10,7 +10,11 @@ import google.generativeai as palm
 import os
 from conversation import Conversation
 
-from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
+try:
+    from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
+except ImportError:
+    print(f"transformers import failed; maybe fine.")
+
 import torch
 
 
@@ -216,3 +220,4 @@ class CodeLlama(AbstractLLM):
         print('\n'.join(find_verilog_modules(response)))
         print('RESPONSE END')
         return response
+        
