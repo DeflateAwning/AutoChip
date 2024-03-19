@@ -96,6 +96,8 @@ def generate_verilog(conv, model_type, model_id=""):
         model = lm.PaLM()
     elif model_type == "CodeLLama":
         model = lm.CodeLlama(model_id)
+    else:
+        raise ValueError(f"Invalid model type: {model_type}")
 
     return(model.generate(conv))
 

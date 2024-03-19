@@ -43,7 +43,7 @@ for prompt in "${prompts[@]}"; do
 		mkdir -p $output_dir/$prompt/test_${i}
 		cd $output_dir/$prompt/test_${i}
 
-		python3 $autogen_script --prompt="$(cat $prompt_dir/${prompt}.v)" --testbench=$testbench --module=top_module --iter=10 --model=ChatGPT3p5 --log=${prompt}_log.txt
+		python3 $autogen_script --prompt="$(cat $prompt_dir/${prompt}.v)" --testbench=$testbench --module=top_module --iter=10 --model=CodeLlama --log=${output_dir}/logs/${prompt}_log.txt --out-dir=${output_dir}/output/${prompt}.txt
 		cd -
 	done
 done
