@@ -9,9 +9,11 @@ prompt_dir=`pwd`/hdlbits_prompts
 testbench_dir=`pwd`/hdlbits_testbenches
 output_dir=`pwd`/outputs
 
-autogen_script=`pwd`/auto_create_verilog.py
+autogen_script=`pwd`/autochip_scripts/auto_create_verilog.py
 
 source `pwd`/venv/bin/activate
+
+echo "Source complete"
 
 tests_per_prompt=5
 
@@ -23,6 +25,11 @@ for path in "$prompt_dir"/*; do
 		prompts+=("${prompt_name%.*}")
 	fi
 done
+
+echo "Prompts: ${prompts[@]}"
+
+echo "Starting loop per-prompt"
+date
 
 for prompt in "${prompts[@]}"; do
 	#check if there's a matching testbench
@@ -36,6 +43,10 @@ for prompt in "${prompts[@]}"; do
 		mkdir -p $output_dir/$prompt/test_${i}
 		cd $output_dir/$prompt/test_${i}
 
-		python3 $autogen_script --prompt="$(cat $prompt_dir/${prompt}.v)" --testbench=$testbench --name=top_module --iter=10 --model=ChatGPT3p5 --log=${prompt}_log.txt		cd -
+		python3 $autogen_script --prompt="$(cat $prompt_dir/${prompt}.v)" --testbench=$testbench --module=top_module --iter=10 --model=ChatGPT3p5 --log=${prompt}_log.txt
+		cd -
 	done
 done
+
+echo "Done"
+date
