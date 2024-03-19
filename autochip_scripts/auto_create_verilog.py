@@ -192,7 +192,7 @@ def main_cli():
     parser.add_argument("--module", dest='module', required=True,
                         help="The module name, must match the testbench expected module name")
     parser.add_argument("-t", "--testbench", help="The testbench file to be run")
-    parser.add_argument("-i", "--max-iter", dest='max_iter', type=int, default=10,
+    parser.add_argument("-i", "iter", dest='max_iter', type=int, default=10,
                         help="[Optional] Number of iterations before the tool quits")
     parser.add_argument("-m", "--model", required=True,
                         choices=["ChatGPT3p5", "ChatGPT4", "Claude", "CodeLLama"],
