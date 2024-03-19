@@ -143,12 +143,13 @@ class CodeLlama(AbstractLLM):
         #     $ export HF_DATASETS_CACHE="/path/to/another/directory"
         # TODO: do this download before starting the GPU instance
 
-        self.tokenizer = CodeLlamaTokenizer.from_pretrained(
-            "codellama/CodeLlama-34b-Instruct-hf")
+        code_llama_model_id = "codellama/CodeLlama-7b-Instruct-hf"
+
+        self.tokenizer = CodeLlamaTokenizer.from_pretrained(code_llama_model_id)
         logger.info(f"Constructed tokenizer: {self.tokenizer}")
 
         self.model = LlamaForCausalLM.from_pretrained(
-            "codellama/CodeLlama-34b-Instruct-hf",
+            code_llama_model_id,
             device_map="auto", torch_dtype = "auto")
         logger.info(f"Constructed model: {self.model}")
         assert isinstance(self.model, LlamaForCausalLM)
