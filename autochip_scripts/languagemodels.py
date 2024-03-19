@@ -10,12 +10,11 @@ import google.generativeai as palm
 import os
 from conversation import Conversation
 
-try:
-    from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
-except ImportError:
-    print(f"transformers import failed; maybe fine.")
+# from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 
 import torch
+
+from loguru import logger
 
 
 # Abstract Large Language Model
@@ -91,8 +90,8 @@ class Claude(AbstractLLM):
             prompt=prompt,
         )
 
-        #print(prompt)
-        #print(completion.completion)
+        #logger.info(prompt)
+        #logger.info(completion.completion)
         return completion.completion
 
 class PaLM(AbstractLLM):
@@ -118,7 +117,7 @@ class PaLM(AbstractLLM):
                     messages.append({'author': '1', 'content': message['content']})
 
         response = palm.chat(context=context, messages=messages)
-        #print(response)
+        #logger.info(response)
         return response.last
 
 from transformers import CodeLlamaTokenizer, LlamaForCausalLM
@@ -146,12 +145,12 @@ class CodeLlama(AbstractLLM):
 
         self.tokenizer = CodeLlamaTokenizer.from_pretrained(
             "codellama/CodeLlama-34b-Instruct-hf")
-        print(f"Constructed tokenizer: {self.tokenizer}")
+        logger.info(f"Constructed tokenizer: {self.tokenizer}")
 
         self.model = LlamaForCausalLM.from_pretrained(
             "codellama/CodeLlama-34b-Instruct-hf",
             device_map="auto", torch_dtype = "auto")
-        print(f"Constructed model: {self.model}")
+        logger.info(f"Constructed model: {self.model}")
         assert isinstance(self.model, LlamaForCausalLM)
 
     def _format_prompt(self, conversation: Conversation) -> str:
@@ -184,7 +183,7 @@ class CodeLlama(AbstractLLM):
             #context = f"<<SYS>>\n{system_prompt}\n<</SYS>>\n\n{user_message}"
             #prompt += f"<s>[INST] {context} [/INST] {answer_message}"
 
-        print(prompt)
+        logger.info(prompt)
         return prompt
 
     def generate(self, conversation: Conversation):
@@ -192,7 +191,10 @@ class CodeLlama(AbstractLLM):
         # Prepare the prompt using the method we created
         prompt = self._format_prompt(conversation)
 
-        inputs = self.tokenizer(prompt, return_tensors="pt").to("cuda")
+        tokenizer_inst = self.tokenizer(prompt, return_tensors="pt")
+        logger.info("Made tokenizer_inst")
+        inputs = tokenizer_inst.to("cuda")
+        logger.info("Moved tokenizer_inst to cuda")
 
         assert isinstance(self.model, LlamaForCausalLM)
         output = self.model.generate(
@@ -203,6 +205,7 @@ class CodeLlama(AbstractLLM):
             temperature=0.1,
             pad_token_id=self.tokenizer.eos_token_id,
         )
+        logger.info("Generated output: self.model.generate(...)")
 
         # Move the output tensor to the CPU
         output = output[0].to("cpu")
@@ -212,13 +215,13 @@ class CodeLlama(AbstractLLM):
         # Extract only the generated response
         response = decoded_output.split("[/INST]")[-1].strip()
 
-        print('RAW RESPONSE START ' + '='*20)
-        print(decoded_output)
-        print('RAW RESPONSE END ' + '='*20)
+        logger.info('RAW RESPONSE START ' + '='*20)
+        logger.info(decoded_output)
+        logger.info('RAW RESPONSE END ' + '='*20)
 
         #response = find_verilog_modules(decoded_output)[-1]
 
-        print('RESPONSE START')
-        print('\n'.join(find_verilog_modules(response)))
-        print('RESPONSE END')
+        logger.info('RESPONSE START')
+        logger.info('\n'.join(find_verilog_modules(response)))
+        logger.info('RESPONSE END')
         return response

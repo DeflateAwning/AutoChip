@@ -9,6 +9,8 @@ import getopt
 
 import re
 
+from loguru import logger
+
 def find_verilog_modules(markdown_string, module_name='top_module'):
 
     module_pattern1 = r'\bmodule\b\s+\w+\s*\([^)]*\)\s*;.*?endmodule\b'
@@ -27,7 +29,7 @@ def find_verilog_modules(markdown_string, module_name='top_module'):
     return module_matches
 
 #def find_verilog_modules(markdown_string,module_name='top_module'):
-#    print(markdown_string)
+#    logger.info(markdown_string)
 #    # This pattern captures module definitions
 #    module_pattern = r'\bmodule\b\s+\w+\s*\(.*?\)\s*;.*?endmodule\b'
 #    # Find all the matched module blocks
@@ -43,12 +45,12 @@ def write_code_blocks_to_file(markdown_string, module_name, filename):
     code_match = find_verilog_modules(markdown_string, module_name)
 
     if not code_match:
-        print("No code blocks found in response")
+        logger.info("No code blocks found in response")
         exit(3)
 
-    #print("----------------------")
-    #print(code_match)
-    #print("----------------------")
+    #logger.info("----------------------")
+    #logger.info(code_match)
+    #logger.info("----------------------")
     # Open the specified file to write the code blocks
     with open(filename, 'w') as file:
         for code_block in code_match:
@@ -141,23 +143,23 @@ def verilog_loop(design_prompt, module, testbench, max_iterations, model_type, o
         success = False
         if proc.returncode != 0:
             status = "Error compiling testbench"
-            print(status)
+            logger.info(status)
 
             message = "The testbench failed to compile. Please fix the module. The output of iverilog is as follows:\n"+proc.stderr
         elif proc.stderr != "":
             status = "Warnings compiling testbench"
-            print(status)
+            logger.info(status)
             message = "The testbench compiled with warnings. Please fix the module. The output of iverilog is as follows:\n"+proc.stderr
         else:
             proc = subprocess.run(["vvp", os.path.join(outdir,module)],capture_output=True,text=True)
             result = proc.stdout.strip().split('\n')[-2].split()
             if result[-1] != 'passed!':
                 status = "Error running testbench"
-                print(status)
+                logger.info(status)
                 message = "The testbench simulated, but had errors. Please fix the module. The output of iverilog is as follows:\n"+proc.stdout
             else:
                 status = "Testbench ran successfully"
-                print(status)
+                logger.info(status)
                 message = ""
                 success = True
 
