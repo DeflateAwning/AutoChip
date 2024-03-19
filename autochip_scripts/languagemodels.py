@@ -121,7 +121,7 @@ class PaLM(AbstractLLM):
         #print(response)
         return response.last
 
-
+from transformers import CodeLlamaTokenizer, LlamaForCausalLM
 class CodeLlama(AbstractLLM):
     """CodeLlama Large Language Model.
     Follow the setup instructions here: https://huggingface.co/welcome
@@ -135,23 +135,37 @@ class CodeLlama(AbstractLLM):
     def __init__(self, model_id="codellama/CodeLlama-13b-hf"):
         super().__init__()
 
-        from transformers import CodeLlamaTokenizer, LlamaForCausalLM
-
         self.model_id = model_id
 
-        self.tokenizer = CodeLlamaTokenizer.from_pretrained("codellama/CodeLlama-34b-Instruct-hf")
-        self.model = LlamaForCausalLM.from_pretrained("codellama/CodeLlama-34b-Instruct-hf", device_map="auto",torch_dtype = "auto")
+        # As of now, the following two commands download massive
+        # model files to: ~/.cache/huggingface/hub/
+        # Option 1: Use cache_dir kwarg to change this location.
+        # Option 2: Use the DF_DATASETS_CACHE environment variable to change this location.
+        #     $ export HF_DATASETS_CACHE="/path/to/another/directory"
+        # TODO: do this download before starting the GPU instance
+
+        self.tokenizer = CodeLlamaTokenizer.from_pretrained(
+            "codellama/CodeLlama-34b-Instruct-hf")
+        print(f"Constructed tokenizer: {self.tokenizer}")
+
+        self.model = LlamaForCausalLM.from_pretrained(
+            "codellama/CodeLlama-34b-Instruct-hf",
+            device_map="auto", torch_dtype = "auto")
+        print(f"Constructed model: {self.model}")
+        assert isinstance(self.model, LlamaForCausalLM)
 
     def _format_prompt(self, conversation: Conversation) -> str:
         # Extract the system prompt, initial user prompt, and the most recent user prompt and answer.
         messages = conversation.get_messages()
+        # each message has a 'role' and 'content' key
+        # TODO: create a Message dataclass to enforce this structure
 
         prompt = ""
 
 
         user_message=""
-        systemp_prompt = ""
-        answer_message=""
+        # system_prompt = ""
+        # answer_message=""
 
         for message in messages:
             # Append system messages with the "<<SYS>>" tags
@@ -171,33 +185,6 @@ class CodeLlama(AbstractLLM):
             #prompt += f"<s>[INST] {context} [/INST] {answer_message}"
 
         print(prompt)
-
-
-        return prompt
-
-    def _format_prompt_donotuse(self, conversation: Conversation) -> str:
-        # Extract the system prompt, initial user prompt, and the most recent user prompt and answer.
-        messages = conversation.get_messages()
-
-        # Extract the initial system message
-        system_prompt = [msg['content'] for msg in messages if msg['role'] == 'system'][0]
-
-        # Extract the user and assistant messages
-        user_messages = [msg['content'] for msg in messages if msg['role'] == 'user']
-        assistant_messages = [msg['content'] for msg in messages if msg['role'] == 'assistant']
-
-        # If there are multiple user messages, only take the last one for the prompt
-        most_recent_user_prompt = user_messages[-1]
-
-        # If there are assistant messages, consider the last assistant message as the answer
-        # to the most recent user message
-        if assistant_messages:
-            most_recent_answer = assistant_messages[-1]
-            prompt = f"<<SYS>>\n{system_prompt}\n<</SYS>>\n\n{most_recent_user_prompt.strip()}"
-            prompt += f"<s>[INST] {most_recent_answer.strip()} [/INST]"
-        else:
-            prompt = f"<<SYS>>\n{system_prompt}\n<</SYS>>\n\n{most_recent_user_prompt.strip()}"
-
         return prompt
 
     def generate(self, conversation: Conversation):
@@ -207,12 +194,14 @@ class CodeLlama(AbstractLLM):
 
         inputs = self.tokenizer(prompt, return_tensors="pt").to("cuda")
 
+        assert isinstance(self.model, LlamaForCausalLM)
         output = self.model.generate(
             inputs["input_ids"],
             max_new_tokens=3000,
             do_sample=True,
             top_p=0.9,
             temperature=0.1,
+            # pad_token_id=self.tokenizer.eos_token_id,
         )
 
         # Move the output tensor to the CPU

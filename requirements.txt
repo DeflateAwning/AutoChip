@@ -15,5 +15,12 @@ google-generativeai>=*
 # numpy==1.26.4
 numpy<2
 
+#### CodeLLama Requirements #############
 # transformers==4.38.2
 transformers>*
+
+# sentencepiece==0.2.0
+sentencepiece>*
+
+# accelerate==0.28.0
+accelerate>*
