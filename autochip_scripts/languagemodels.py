@@ -183,7 +183,7 @@ class CodeLlama(AbstractLLM):
             #context = f"<<SYS>>\n{system_prompt}\n<</SYS>>\n\n{user_message}"
             #prompt += f"<s>[INST] {context} [/INST] {answer_message}"
 
-        logger.info(prompt)
+        logger.info(f"Running prompt:\n{prompt}")
         return prompt
 
     def generate(self, conversation: Conversation):
@@ -209,15 +209,16 @@ class CodeLlama(AbstractLLM):
 
         # Move the output tensor to the CPU
         output = output[0].to("cpu")
+        logger.info("Moved output to CPU")
+
         # Decode the output to get the generated text
         decoded_output = self.tokenizer.decode(output)
+        logger.info("Decoded output")
         
         # Extract only the generated response
         response = decoded_output.split("[/INST]")[-1].strip()
 
-        logger.info('RAW RESPONSE START ' + '='*20)
-        logger.info(decoded_output)
-        logger.info('RAW RESPONSE END ' + '='*20)
+        logger.info(f"RAW RECEIVED RESPONSE:\n{decoded_output}")
 
         #response = find_verilog_modules(decoded_output)[-1]
 
