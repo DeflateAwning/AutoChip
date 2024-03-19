@@ -135,6 +135,8 @@ class CodeLlama(AbstractLLM):
     def __init__(self, model_id="codellama/CodeLlama-13b-hf"):
         super().__init__()
 
+        from transformers import CodeLlamaTokenizer, LlamaForCausalLM
+
         self.model_id = model_id
 
         self.tokenizer = CodeLlamaTokenizer.from_pretrained("codellama/CodeLlama-34b-Instruct-hf")

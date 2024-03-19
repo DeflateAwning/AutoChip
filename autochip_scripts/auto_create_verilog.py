@@ -209,7 +209,7 @@ def main_cli():
         max_iterations=args.max_iter,
         model_type=args.model,
         outdir=args.out_dir,
-        log=args.log
+        log=args.log,
     )
 
 if __name__ == "__main__":

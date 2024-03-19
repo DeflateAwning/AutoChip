@@ -14,3 +14,6 @@ google-generativeai>=*
 
 # numpy==1.26.4
 numpy>=*
+
+# transformers==4.38.2
+transformers>*
