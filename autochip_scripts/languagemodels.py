@@ -27,7 +27,7 @@ class AbstractLLM(ABC):
         pass
 
     @abstractmethod
-    def generate(self, conversation: Conversation):
+    def generate(self, conversation: Conversation) -> str:
         """Generate a response based on the given conversation."""
         pass
 
@@ -123,7 +123,14 @@ class PaLM(AbstractLLM):
 
 
 class CodeLlama(AbstractLLM):
-    """CodeLlama Large Language Model."""
+    """CodeLlama Large Language Model.
+    Follow the setup instructions here: https://huggingface.co/welcome
+    Install git-lfs:
+        Option 1: https://github.com/git-lfs/git-lfs/issues/4134#issuecomment-1635204943
+        Option 2: https://gist.github.com/pourmand1376/bc48a407f781d6decae316a5cfa7d8ab
+
+    Model list: https://huggingface.co/models?search=code_llama
+    """
 
     def __init__(self, model_id="codellama/CodeLlama-13b-hf"):
         super().__init__()
@@ -220,4 +227,3 @@ class CodeLlama(AbstractLLM):
         print('\n'.join(find_verilog_modules(response)))
         print('RESPONSE END')
         return response
-        
