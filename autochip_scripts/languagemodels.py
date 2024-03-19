@@ -193,9 +193,9 @@ class CodeLlama(AbstractLLM):
         prompt = self._format_prompt(conversation)
 
         tokenizer_inst = self.tokenizer(prompt, return_tensors="pt")
-        logger.info("Made tokenizer_inst")
+        logger.debug("Made tokenizer_inst")
         inputs = tokenizer_inst.to("cuda")
-        logger.info("Moved tokenizer_inst to cuda")
+        logger.debug("Moved tokenizer_inst to cuda")
 
         assert isinstance(self.model, LlamaForCausalLM)
         output = self.model.generate(
@@ -206,15 +206,15 @@ class CodeLlama(AbstractLLM):
             temperature=0.1,
             pad_token_id=self.tokenizer.eos_token_id,
         )
-        logger.info("Generated output: self.model.generate(...)")
+        logger.debug("Generated output: self.model.generate(...)")
 
         # Move the output tensor to the CPU
         output = output[0].to("cpu")
-        logger.info("Moved output to CPU")
+        logger.debug("Moved output to CPU")
 
         # Decode the output to get the generated text
         decoded_output = self.tokenizer.decode(output)
-        logger.info("Decoded output")
+        logger.debug("Decoded output")
         
         # Extract only the generated response
         response = decoded_output.split("[/INST]")[-1].strip()

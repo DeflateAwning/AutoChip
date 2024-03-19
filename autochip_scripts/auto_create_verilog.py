@@ -11,6 +11,8 @@ import re
 
 from loguru import logger
 
+logger.add(f"auto_create_verilog.log")
+
 def find_verilog_modules(markdown_string, module_name='top_module'):
 
     module_pattern1 = r'\bmodule\b\s+\w+\s*\([^)]*\)\s*;.*?endmodule\b'
