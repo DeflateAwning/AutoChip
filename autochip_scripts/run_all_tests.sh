@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# Run this script from the <repo_root>/autochip_scripts directory!
+
+# halt if there's an error
+set -e
+
 prompt_dir=`pwd`/hdlbits_prompts
 testbench_dir=`pwd`/hdlbits_testbenches
 output_dir=`pwd`/outputs
