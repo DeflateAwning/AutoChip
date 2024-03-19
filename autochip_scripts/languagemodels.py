@@ -201,7 +201,7 @@ class CodeLlama(AbstractLLM):
             do_sample=True,
             top_p=0.9,
             temperature=0.1,
-            # pad_token_id=self.tokenizer.eos_token_id,
+            pad_token_id=self.tokenizer.eos_token_id,
         )
 
         # Move the output tensor to the CPU
