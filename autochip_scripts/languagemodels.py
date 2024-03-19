@@ -212,6 +212,10 @@ class CodeLlama(AbstractLLM):
         # Extract only the generated response
         response = decoded_output.split("[/INST]")[-1].strip()
 
+        print('RAW RESPONSE START ' + '='*20)
+        print(decoded_output)
+        print('RAW RESPONSE END ' + '='*20)
+
         #response = find_verilog_modules(decoded_output)[-1]
 
         print('RESPONSE START')
