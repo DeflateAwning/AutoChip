@@ -15,6 +15,10 @@ source `pwd`/venv/bin/activate
 
 echo "Source complete"
 
+# make the output directories
+mkdir -p $output_dir/logs
+mkdir -p $output_dir/output
+
 tests_per_prompt=5
 
 promtps=()
