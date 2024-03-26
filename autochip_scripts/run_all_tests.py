@@ -34,7 +34,7 @@ def main(model_type: str, tests_per_prompt: int = 5):
             continue
 
         for test_num in range(tests_per_prompt):
-            test_output_dir = output_dir / prompt_file_path / f"test_{test_num}"
+            test_output_dir = output_dir / prompt_file_path.stem / f"test_{test_num}"
             test_output_dir.mkdir(parents=True, exist_ok=True)
 
             with open(prompt_file_path, 'r') as f:

@@ -1,7 +1,6 @@
 import re
 
 def find_verilog_modules(markdown_string, module_name='top_module'):
-
     module_pattern1 = r'\bmodule\b\s+\w+\s*\([^)]*\)\s*;.*?endmodule\b'
 
     module_pattern2 = r'\bmodule\b\s+\w+\s*#\s*\([^)]*\)\s*\([^)]*\)\s*;.*?endmodule\b'
