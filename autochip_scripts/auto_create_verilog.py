@@ -40,7 +40,12 @@ def write_code_blocks_to_file(markdown_string, module_name, filename):
 
     if not code_match:
         logger.info("No code blocks found in response")
-        exit(3)
+        
+        with open(filename, 'w') as file:
+            for code_block in code_match:
+                file.write("ERROR: No code blocks found in response!")
+                file.write('\n')
+        raise ValueError("No code blocks found in response")
 
     with open(filename, 'w') as file:
         for code_block in code_match:
@@ -129,56 +134,59 @@ def verilog_loop(design_prompt: str,
     # FIXME: factor out this testbench runner into a separate function
 
     status = ""
-    while (not testbench_success):
+    for iteration_count in range(max_iterations):
+        
         # Generate a response
         response = generate_verilog(conv, model_type)
         conv.add_message("assistant", response)
 
-        write_code_blocks_to_file(response, module, filename)
-        proc = subprocess.run(["iverilog", "-o", os.path.join(out_dir,module), filename, testbench],capture_output=True,text=True)
+        try:
+            write_code_blocks_to_file(response, module, filename)
+        except ValueError as e:
+            # If no code blocks were found, log the error and continue to the next iteration
+            continue
+
+        # TODO: run iverilog with SystemVerilog syntax support
+        proc = subprocess.run(
+            ["iverilog", "-o", os.path.join(out_dir,module), filename, testbench],
+            capture_output=True, text=True)
 
         testbench_success = False
         if proc.returncode != 0:
             status = "Error compiling testbench"
-            logger.info(status)
-
-            message = "The testbench failed to compile. Please fix the module. The output of iverilog is as follows:\n"+proc.stderr
+            llm_message = "The testbench failed to compile. Please fix the module. The output of iverilog is as follows:\n"+proc.stderr
         elif proc.stderr != "":
             status = "Warnings compiling testbench"
-            logger.info(status)
-            message = "The testbench compiled with warnings. Please fix the module. The output of iverilog is as follows:\n"+proc.stderr
+            llm_message = "The testbench compiled with warnings. Please fix the module. The output of iverilog is as follows:\n"+proc.stderr
         else:
             proc = subprocess.run(["vvp", os.path.join(out_dir,module)],capture_output=True,text=True)
             result = proc.stdout.strip().split('\n')[-2].split()
             if result[-1] != 'passed!':
                 status = "Error running testbench"
-                logger.info(status)
-                message = "The testbench simulated, but had errors. Please fix the module. The output of iverilog is as follows:\n"+proc.stdout
+                llm_message = "The testbench simulated, but had errors. Please fix the module. The output of iverilog is as follows:\n"+proc.stdout
             else:
                 status = "Testbench ran successfully"
-                logger.info(status)
-                message = ""
+                llm_message = ""
                 testbench_success = True
 
         ################################
+        logger.info(f"Iteration {iteration_count} - {status=}, {llm_message=}")
         with open(os.path.join(out_dir,"log_iter_"+str(iteration_count)+".txt"), 'w') as file:
             file.write('\n'.join(str(i) for i in conv.get_messages()))
             file.write('\n\n Iteration status: ' + status + '\n')
 
-        if not testbench_success:
-            if iteration_count > 0:
-                conv.remove_message(2)
-                conv.remove_message(2)
-
-            #with open(testbench, 'r') as file: testbench_text = file.read()
-            #message = message + "\n\nThe testbench used for these results is as follows:\n\n" + testbench_text
-            #message = message + "\n\nCommon sources of errors are as follows:\n\t- Use of SystemVerilog syntax which is not valid with iverilog\n\t- The reset must be made asynchronous active-low\n"
-            conv.add_message("user", message)
-
-        if iteration_count >= max_iterations:
+        if testbench_success:
             break
 
-        iteration_count += 1
+        if iteration_count > 0:
+            conv.remove_message(2)
+            conv.remove_message(2)
+
+        #with open(testbench, 'r') as file: testbench_text = file.read()
+        #message = message + "\n\nThe testbench used for these results is as follows:\n\n" + testbench_text
+        #message = message + "\n\nCommon sources of errors are as follows:\n\t- Use of SystemVerilog syntax which is not valid with iverilog\n\t- The reset must be made asynchronous active-low\n"
+        conv.add_message("user", llm_message)
+
 
 def main_cli():
     import argparse

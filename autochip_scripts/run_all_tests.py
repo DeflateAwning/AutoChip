@@ -53,6 +53,7 @@ def main(model_type: str, tests_per_prompt: int = 5):
             )
 
 if __name__ == '__main__':
+    logger.info(f"Starting.")
     main(
         model_type="CodeLLama",
         tests_per_prompt=5,
