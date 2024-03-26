@@ -1,18 +1,18 @@
-import sys
+import re
 
-# Allows us to log the output of the model to a file if logging is enabled
-class LogStdoutToFile:
-    def __init__(self, filename):
-        self._filename = filename
-        self._original_stdout = sys.stdout
+def find_verilog_modules(markdown_string, module_name='top_module'):
 
-    def __enter__(self):
-        if self._filename:
-            sys.stdout = open(self._filename, 'w')
-        return self
+    module_pattern1 = r'\bmodule\b\s+\w+\s*\([^)]*\)\s*;.*?endmodule\b'
 
-    def __exit__(self, exc_type, exc_value, traceback):
-        if self._filename:
-            sys.stdout.close()
-        sys.stdout = self._original_stdout
+    module_pattern2 = r'\bmodule\b\s+\w+\s*#\s*\([^)]*\)\s*\([^)]*\)\s*;.*?endmodule\b'
 
+    module_matches1 = re.findall(module_pattern1, markdown_string, re.DOTALL)
+
+    module_matches2 = re.findall(module_pattern2, markdown_string, re.DOTALL)
+
+    module_matches = module_matches1 + module_matches2
+
+    if not module_matches:
+        return []
+
+    return module_matches

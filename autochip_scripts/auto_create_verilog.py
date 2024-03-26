@@ -9,6 +9,7 @@ from pathlib import Path
 # Project Libraries
 import languagemodels as lm
 import conversation as cv
+from utils import find_verilog_modules
 
 logger.add(f"auto_create_verilog.log")
 
@@ -32,34 +33,6 @@ def get_nvidia_gpu_info():
     except FileNotFoundError:
         logger.warning("'nvidia-smi' command not found. Ensure NVIDIA drivers are installed.")
 
-def find_verilog_modules(markdown_string, module_name='top_module'):
-
-    module_pattern1 = r'\bmodule\b\s+\w+\s*\([^)]*\)\s*;.*?endmodule\b'
-
-    module_pattern2 = r'\bmodule\b\s+\w+\s*#\s*\([^)]*\)\s*\([^)]*\)\s*;.*?endmodule\b'
-
-    module_matches1 = re.findall(module_pattern1, markdown_string, re.DOTALL)
-
-    module_matches2 = re.findall(module_pattern2, markdown_string, re.DOTALL)
-
-    module_matches = module_matches1 + module_matches2
-
-    if not module_matches:
-        return []
-
-    return module_matches
-
-#def find_verilog_modules(markdown_string,module_name='top_module'):
-#    logger.info(markdown_string)
-#    # This pattern captures module definitions
-#    module_pattern = r'\bmodule\b\s+\w+\s*\(.*?\)\s*;.*?endmodule\b'
-#    # Find all the matched module blocks
-#    module_matches = re.findall(module_pattern, markdown_string, re.DOTALL)
-#    # If no module blocks found, return an empty list
-#    if not module_matches:
-#        return []
-#    return module_matches
-
 def write_code_blocks_to_file(markdown_string, module_name, filename):
     # Find all code blocks using a regular expression (matches content between triple backticks)
     #code_blocks = re.findall(r'```(?:\w*\n)?(.*?)```', markdown_string, re.DOTALL)
@@ -69,10 +42,6 @@ def write_code_blocks_to_file(markdown_string, module_name, filename):
         logger.info("No code blocks found in response")
         exit(3)
 
-    #logger.info("----------------------")
-    #logger.info(code_match)
-    #logger.info("----------------------")
-    # Open the specified file to write the code blocks
     with open(filename, 'w') as file:
         for code_block in code_match:
             file.write(code_block)
@@ -130,12 +99,12 @@ def verilog_loop(design_prompt: str,
                 max_iterations: int,
                 model_type: str,
                 out_dir: str | Path,
-                log_file = str | Path | None):
+                conversation_log_file = str | Path | None):
     
     get_nvidia_gpu_info()
     
 
-    conv = cv.Conversation(log_file=log_file)
+    conv = cv.Conversation(log_file=conversation_log_file)
 
     #conv.add_message("system", "You are a Verilog engineering tool. Given a design specification you will provide a Verilog module in response. Given errors in that design you will provide a completed fixed module. Only complete functional models should be given. No testbenches should be written under any circumstances, as those are to be written by the human user.")
     conv.add_message("system", "You are an autocomplete engine for Verilog code. \
@@ -240,7 +209,7 @@ def main_cli():
         max_iterations=args.max_iter,
         model_type=args.model,
         out_dir=args.out_dir,
-        log_file=args.log,
+        conversation_log_file=args.log,
     )
 
 if __name__ == "__main__":

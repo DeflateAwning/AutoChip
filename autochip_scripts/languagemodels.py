@@ -18,7 +18,7 @@ from conversation import Conversation
 import torch
 
 # Modules from this project
-from auto_create_verilog import find_verilog_modules
+from utils import find_verilog_modules
 
 
 # Abstract Large Language Model

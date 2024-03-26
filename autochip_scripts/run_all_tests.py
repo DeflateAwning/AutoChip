@@ -49,7 +49,7 @@ def main(model_type: str, tests_per_prompt: int = 5):
                 max_iterations=tests_per_prompt,
                 model_type=model_type,
                 out_dir=test_output_dir,
-                log_file=(test_output_dir / "log.txt"),
+                conversation_log_file=(test_output_dir / "log.txt"),
             )
 
 if __name__ == '__main__':
