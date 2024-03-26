@@ -1,5 +1,9 @@
+# Python Modules
 from abc import ABC, abstractmethod
+import os
+from loguru import logger
 
+# AI Modules
 import openai
 
 from anthropic import Anthropic
@@ -7,14 +11,14 @@ from anthropic import AsyncAnthropic, HUMAN_PROMPT, AI_PROMPT
 
 import google.generativeai as palm
 
-import os
 from conversation import Conversation
 
 # from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 
 import torch
 
-from loguru import logger
+# Modules from this project
+from auto_create_verilog import find_verilog_modules
 
 
 # Abstract Large Language Model

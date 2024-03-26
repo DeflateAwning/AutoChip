@@ -1,17 +1,34 @@
-#!./venv/bin/python3
+# Python Libraries
+import os
+import re
+from loguru import logger
 import subprocess
+
+# Project Libraries
 import languagemodels as lm
 import conversation as cv
 
-import sys
-import os
-import getopt
-
-import re
-
-from loguru import logger
-
 logger.add(f"auto_create_verilog.log")
+
+def get_nvidia_gpu_info():
+    """AI-generated code to get NVIDIA GPU information."""
+    try:
+        # Run the "nvidia-smi" command and capture its output
+        nvidia_smi_output = subprocess.check_output(["nvidia-smi", "--query-gpu=gpu_name", "--format=csv,noheader"], encoding='utf-8')
+        
+        # Split the output by line to handle multiple GPUs
+        gpu_names = nvidia_smi_output.strip().split('\n')
+        
+        if gpu_names:
+            logger.info("NVIDIA GPU(s) found:")
+            for i, name in enumerate(gpu_names, start=1):
+                logger.info(f"GPU {i}: {name}")
+        else:
+            logger.warning("No NVIDIA GPUs found.")
+    except subprocess.CalledProcessError as e:
+        logger.warning("Failed to run 'nvidia-smi'. Make sure NVIDIA drivers are installed and 'nvidia-smi' is in your PATH.")
+    except FileNotFoundError:
+        logger.warning("'nvidia-smi' command not found. Ensure NVIDIA drivers are installed.")
 
 def find_verilog_modules(markdown_string, module_name='top_module'):
 
@@ -105,10 +122,11 @@ def generate_verilog(conv, model_type, model_id=""):
 
     return(model.generate(conv))
 
-def verilog_loop(design_prompt, module, testbench, max_iterations, model_type, outdir="", log=None):
-
-    if outdir != "":
-        outdir = outdir + "/"
+def verilog_loop(design_prompt, module, testbench, max_iterations, model_type, out_dir="", log=None):
+    get_nvidia_gpu_info()
+    
+    if out_dir != "":
+        out_dir = out_dir + "/"
 
     conv = cv.Conversation(log_file=log)
 
@@ -131,7 +149,7 @@ def verilog_loop(design_prompt, module, testbench, max_iterations, model_type, o
 
     iterations = 0
 
-    filename = os.path.join(outdir,module+".v")
+    filename = os.path.join(out_dir,module+".v")
 
     status = ""
     while not (success or timeout):
@@ -140,7 +158,7 @@ def verilog_loop(design_prompt, module, testbench, max_iterations, model_type, o
         conv.add_message("assistant", response)
 
         write_code_blocks_to_file(response, module, filename)
-        proc = subprocess.run(["iverilog", "-o", os.path.join(outdir,module), filename, testbench],capture_output=True,text=True)
+        proc = subprocess.run(["iverilog", "-o", os.path.join(out_dir,module), filename, testbench],capture_output=True,text=True)
 
         success = False
         if proc.returncode != 0:
@@ -153,7 +171,7 @@ def verilog_loop(design_prompt, module, testbench, max_iterations, model_type, o
             logger.info(status)
             message = "The testbench compiled with warnings. Please fix the module. The output of iverilog is as follows:\n"+proc.stderr
         else:
-            proc = subprocess.run(["vvp", os.path.join(outdir,module)],capture_output=True,text=True)
+            proc = subprocess.run(["vvp", os.path.join(out_dir,module)],capture_output=True,text=True)
             result = proc.stdout.strip().split('\n')[-2].split()
             if result[-1] != 'passed!':
                 status = "Error running testbench"
@@ -165,11 +183,10 @@ def verilog_loop(design_prompt, module, testbench, max_iterations, model_type, o
                 message = ""
                 success = True
 
-################################
-        with open(os.path.join(outdir,"log_iter_"+str(iterations)+".txt"), 'w') as file:
+        ################################
+        with open(os.path.join(out_dir,"log_iter_"+str(iterations)+".txt"), 'w') as file:
             file.write('\n'.join(str(i) for i in conv.get_messages()))
             file.write('\n\n Iteration status: ' + status + '\n')
-
 
         if not success:
             if iterations > 0:
@@ -214,7 +231,7 @@ def main_cli():
         testbench=args.testbench,
         max_iterations=args.max_iter,
         model_type=args.model,
-        outdir=args.out_dir,
+        out_dir=args.out_dir,
         log=args.log,
     )
 
