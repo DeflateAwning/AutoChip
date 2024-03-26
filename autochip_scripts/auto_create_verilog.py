@@ -1,8 +1,10 @@
 # Python Libraries
 import os
 import re
+from typing import Optional
 from loguru import logger
 import subprocess
+from pathlib import Path
 
 # Project Libraries
 import languagemodels as lm
@@ -122,13 +124,18 @@ def generate_verilog(conv, model_type, model_id=""):
 
     return(model.generate(conv))
 
-def verilog_loop(design_prompt, module, testbench, max_iterations, model_type, out_dir="", log=None):
+def verilog_loop(design_prompt: str,
+                module: str,
+                testbench: str | Path,
+                max_iterations: int,
+                model_type: str,
+                out_dir: str | Path,
+                log_file = str | Path | None):
+    
     get_nvidia_gpu_info()
     
-    if out_dir != "":
-        out_dir = out_dir + "/"
 
-    conv = cv.Conversation(log_file=log)
+    conv = cv.Conversation(log_file=log_file)
 
     #conv.add_message("system", "You are a Verilog engineering tool. Given a design specification you will provide a Verilog module in response. Given errors in that design you will provide a completed fixed module. Only complete functional models should be given. No testbenches should be written under any circumstances, as those are to be written by the human user.")
     conv.add_message("system", "You are an autocomplete engine for Verilog code. \
@@ -144,15 +151,16 @@ def verilog_loop(design_prompt, module, testbench, max_iterations, model_type, o
 
     conv.add_message("user", design_prompt)
 
-    success = False
-    timeout = False
+    testbench_success = False
 
-    iterations = 0
+    iteration_count = 0
 
-    filename = os.path.join(out_dir,module+".v")
+    filename = os.path.join(out_dir, module+".v")
+
+    # FIXME: factor out this testbench runner into a separate function
 
     status = ""
-    while not (success or timeout):
+    while (not testbench_success):
         # Generate a response
         response = generate_verilog(conv, model_type)
         conv.add_message("assistant", response)
@@ -160,7 +168,7 @@ def verilog_loop(design_prompt, module, testbench, max_iterations, model_type, o
         write_code_blocks_to_file(response, module, filename)
         proc = subprocess.run(["iverilog", "-o", os.path.join(out_dir,module), filename, testbench],capture_output=True,text=True)
 
-        success = False
+        testbench_success = False
         if proc.returncode != 0:
             status = "Error compiling testbench"
             logger.info(status)
@@ -181,15 +189,15 @@ def verilog_loop(design_prompt, module, testbench, max_iterations, model_type, o
                 status = "Testbench ran successfully"
                 logger.info(status)
                 message = ""
-                success = True
+                testbench_success = True
 
         ################################
-        with open(os.path.join(out_dir,"log_iter_"+str(iterations)+".txt"), 'w') as file:
+        with open(os.path.join(out_dir,"log_iter_"+str(iteration_count)+".txt"), 'w') as file:
             file.write('\n'.join(str(i) for i in conv.get_messages()))
             file.write('\n\n Iteration status: ' + status + '\n')
 
-        if not success:
-            if iterations > 0:
+        if not testbench_success:
+            if iteration_count > 0:
                 conv.remove_message(2)
                 conv.remove_message(2)
 
@@ -198,10 +206,10 @@ def verilog_loop(design_prompt, module, testbench, max_iterations, model_type, o
             #message = message + "\n\nCommon sources of errors are as follows:\n\t- Use of SystemVerilog syntax which is not valid with iverilog\n\t- The reset must be made asynchronous active-low\n"
             conv.add_message("user", message)
 
-        if iterations >= max_iterations:
-            timeout = True
+        if iteration_count >= max_iterations:
+            break
 
-        iterations += 1
+        iteration_count += 1
 
 def main_cli():
     import argparse
@@ -232,7 +240,7 @@ def main_cli():
         max_iterations=args.max_iter,
         model_type=args.model,
         out_dir=args.out_dir,
-        log=args.log,
+        log_file=args.log,
     )
 
 if __name__ == "__main__":
